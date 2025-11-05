@@ -55,18 +55,18 @@ return {
     },
     {
         channel = "feishu",
-        keyword = "all",
+        keyword = "test",
         webhook = "https://open.feishu.cn/open-apis/bot/v2/hook/your-webhook-id"
     },
     {
         channel = "dingding",
-        keyword = "all",
+        keyword = "阿里云",
         webhook = "https://oapi.dingtalk.com/robot/send?access_token=your-access-token",
         secret = "your-secret"
     },
     {
         channel = "custom_post",
-        keyword = "all",
+        keyword = "百度",
         webhook = "https://your-api-endpoint.com/webhook",
         content_type = "application/json",
         post_body = {
