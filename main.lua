@@ -205,8 +205,8 @@ sys.taskInit(function()
     end
 
     -- 设备重启管理（增加状态检查）
-    local restart_enabled = true  -- 可配置的重启开关
-    local restart_interval = 2 * 60 * 60 * 1000  -- 2小时
+    local restart_enabled = config.RESTART_ENABLED  -- 从配置读取重启开关
+    local restart_interval = config.RESTART_INTERVAL -- 从配置读取重启间隔
 
     if restart_enabled then
         sys.timerLoopStart(function()
