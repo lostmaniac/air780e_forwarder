@@ -5,7 +5,7 @@ return {
 
     -- 设备自动重启配置
     RESTART_ENABLED = true,                    -- 是否启用自动重启
-    RESTART_INTERVAL = 720 * 60 * 60 * 1000,    -- 重启间隔，2小时
+    RESTART_INTERVAL = 72 * 60 * 60 * 1000,    -- 重启间隔，72小时
     
     -- 定时查询流量间隔, 单位毫秒, 设置为 0 关闭
     QUERY_TRAFFIC_INTERVAL = 0,
