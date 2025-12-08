@@ -33,35 +33,57 @@ log.info("main", "fskv.init", fskv.init())
 
 -- POWERKEY
 local rtos_bsp = rtos.bsp()
-local pin_table = { ["EC618"] = 35, ["EC718P"] = 46 }
+local pin_table = {
+    ["EC618"] = 35,
+    ["EC718P"] = 46,
+    ["AIR780E"] = 35,
+    ["AIR780EP"] = 35,
+    ["AIR780E4G"] = 35
+}
 local powerkey_pin = pin_table[rtos_bsp]
+
+log.info("main", "硬件平台:", rtos_bsp, "电源键引脚:", powerkey_pin or "未找到")
 
 if powerkey_pin then
     local button_last_press_time, button_last_release_time = 0, 0
-    gpio.setup(powerkey_pin, function()
+    log.info("main", "配置电源键引脚:", powerkey_pin)
+
+    local gpio_result = gpio.setup(powerkey_pin, function()
         local current_time = mcu.ticks()
+        local pin_state = gpio.get(powerkey_pin)
+        log.debug("main", "电源键中断触发，引脚状态:", pin_state)
+
         -- 按下
-        if gpio.get(powerkey_pin) == 0 then
+        if pin_state == 0 then
             button_last_press_time = current_time -- 记录最后一次按下时间
+            log.debug("main", "电源键按下")
             return
         end
         -- 释放
         if button_last_press_time == 0 then -- 开机前已经按下, 开机后释放
+            log.debug("main", "电源键释放，但按下时间为0，忽略")
             return
         end
         if current_time - button_last_release_time < 250 then -- 防止连按
+            log.debug("main", "电源键连按，忽略")
             return
         end
         local duration = current_time - button_last_press_time -- 按键持续时间
         button_last_release_time = current_time -- 记录最后一次释放时间
+        log.info("main", "电源键释放，持续时间:", duration, "ms")
+
         if duration > 2000 then
-            log.debug("EVENT.POWERKEY_LONG_PRESS", duration)
+            log.info("main", "电源键长按事件")
             sys.publish("POWERKEY_LONG_PRESS", duration)
         elseif duration > 50 then
-            log.debug("EVENT.POWERKEY_SHORT_PRESS", duration)
+            log.info("main", "电源键短按事件")
             sys.publish("POWERKEY_SHORT_PRESS", duration)
         end
     end, gpio.PULLUP)
+
+    log.info("main", "电源键GPIO配置结果:", gpio_result)
+else
+    log.warn("main", "未找到支持的平台电源键引脚配置")
 end
 
 -- 加载模块
@@ -240,7 +262,9 @@ sys.taskInit(function()
 
     -- 电源键处理（合并短按和双击功能）
     local last_short_press = 0
+    log.info("main", "注册电源键短按事件订阅")
     sys.subscribe("POWERKEY_SHORT_PRESS", function()
+        log.info("main", "收到电源键短按事件")
         local current_time = mcu.ticks()
 
         -- 检测双击
@@ -269,8 +293,13 @@ sys.taskInit(function()
 
         last_short_press = current_time
     end)
+
     -- 电源键长按查询流量
-    sys.subscribe("POWERKEY_LONG_PRESS", util_mobile.queryTraffic)
+    log.info("main", "注册电源键长按事件订阅")
+    sys.subscribe("POWERKEY_LONG_PRESS", function(duration)
+        log.info("main", "收到电源键长按事件，持续时间:", duration, "ms")
+        util_mobile.queryTraffic(duration)
+    end)
 end)
 
 sys.taskInit(function()

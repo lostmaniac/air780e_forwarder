@@ -36,14 +36,22 @@ return {
         traverse_and_replace(body)
 
         -- 根据 content-type 进行编码, 默认为 application/x-www-form-urlencoded
-        if string.find(config.CUSTOM_POST_CONTENT_TYPE, "json") then
+        if config.CUSTOM_POST_CONTENT_TYPE and string.find(config.CUSTOM_POST_CONTENT_TYPE, "json") then
             body = json.encode(body)
         else
             body = urlencodeTab(body)
         end
 
-        log.info("util_notify", "POST", config.CUSTOM_POST_URL, config.CUSTOM_POST_CONTENT_TYPE, body)
-        return util_http.fetch(nil, "POST", config.CUSTOM_POST_URL, header, body)
+        log.info("util_notify", "POST", config.CUSTOM_POST_URL, config.CUSTOM_POST_CONTENT_TYPE, "消息内容", msg)
+        local code, headers, response = util_http.fetch(nil, "POST", config.CUSTOM_POST_URL, header, body)
+
+        if code and code >= 200 and code < 300 then
+            log.info("util_notify", "custom_post发送成功", "状态码", code)
+        else
+            log.error("util_notify", "custom_post发送失败", "状态码", code, "响应", response)
+        end
+
+        return code, headers, response
     end,
         -- 发送到 dingtalk
     ["dingtalk"] = function(msg)
