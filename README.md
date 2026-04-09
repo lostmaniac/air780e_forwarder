@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-- 📱 **多渠道转发**：支持企业微信、飞书、钉钉、自定义POST等4种转发渠道
+- 📱 **多渠道转发**：支持企业微信、飞书、钉钉、自定义POST、邮件等5种转发渠道
 - 🎯 **智能匹配**：支持关键词匹配（不区分大小写）和 Lua 正则模式匹配
 - 🔄 **异步处理**：采用协程机制，支持并发转发多个渠道
 - 📊 **设备信息**：自动附加信号强度、运营商、位置等设备信息
@@ -146,6 +146,44 @@ return {
     }
 }
 ```
+
+#### 5. 邮件转发 (email)
+```lua
+-- SSL加密（推荐，适用于QQ邮箱、163邮箱、Gmail等）
+{
+    channel = "email",
+    keyword = "all",
+    smtp_server = "smtp.qq.com",
+    smtp_port = 465,
+    smtp_ssl = true,
+    smtp_username = "user@qq.com",
+    smtp_password = "授权码",       -- 注意：QQ邮箱需要使用授权码
+    email_from = "user@qq.com",
+    email_to = "recipient@example.com"
+}
+
+-- 明文传输（适用于内网邮件服务器）
+{
+    channel = "email",
+    keyword = "验证码",
+    smtp_server = "mail.example.com",
+    smtp_port = 25,
+    smtp_ssl = false,
+    smtp_username = "user@example.com",
+    smtp_password = "password",
+    email_from = "user@example.com",
+    email_to = "recipient@example.com"
+}
+```
+
+**常用邮箱SMTP配置：**
+
+| 邮箱 | SMTP服务器 | 端口 | 说明 |
+|------|-----------|------|------|
+| QQ邮箱 | smtp.qq.com | 465 | 需开启SMTP服务并获取授权码 |
+| 163邮箱 | smtp.163.com | 465 | 需开启SMTP服务并设置授权密码 |
+| Gmail | smtp.gmail.com | 465 | 需启用应用专用密码 |
+| Outlook | smtp.office365.com | 587 | 支持STARTTLS |
 
 ### 匹配规则
 

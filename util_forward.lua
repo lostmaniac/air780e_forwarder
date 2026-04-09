@@ -1,5 +1,6 @@
 local util_notify = require "util_notify"
 local util_http = require "util_http"
+local util_smtp = require "util_smtp"
 local forward_config = require "forward_config"
 
 local util_forward = {}
@@ -191,6 +192,8 @@ local function sendByChannel(msg, channel, rule)
         success = sendToDingding(msg, rule.webhook, rule.secret)
     elseif channel == "custom_post" then
         success = sendToCustomPost(msg, rule.webhook, rule.content_type, rule.post_body)
+    elseif channel == "email" then
+        success = util_smtp.send(rule, msg)
     else
         log.error("util_forward", "不支持的转发渠道", channel)
         return false

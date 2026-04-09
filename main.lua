@@ -1,5 +1,5 @@
 PROJECT = "air780epv_forwarder"
-VERSION = "2.0.0"
+VERSION = "1.2.0"
 
 log.setLevel("DEBUG")
 log.info("main", PROJECT, VERSION)

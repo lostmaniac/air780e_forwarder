@@ -1,12 +1,19 @@
 -- 转发规则配置文件
 -- 支持多个渠道，关键词匹配和正则匹配
--- channel: 转发渠道 (wecom, feishu, dingding, custom_post)
+-- channel: 转发渠道 (wecom, feishu, dingding, custom_post, email)
 -- keyword: 关键词匹配，部分匹配不区分大小写 ("all" 表示匹配所有消息)
 -- regular: Lua正则模式匹配，区分大小写 (与keyword二选一)
 -- webhook: 接收地址
 -- secret: 签名密钥 (可选，用于dingding)
 -- content_type: 内容类型 (可选，用于custom_post)
 -- post_body: POST内容模板 (可选，用于custom_post)
+-- smtp_server: SMTP服务器地址 (用于email)
+-- smtp_port: SMTP服务器端口 (用于email，默认SSL=465，明文=25)
+-- smtp_ssl: 是否启用SSL (用于email，默认true)
+-- smtp_username: SMTP用户名 (用于email)
+-- smtp_password: SMTP密码/授权码 (用于email)
+-- email_from: 发件人邮箱 (用于email)
+-- email_to: 收件人邮箱 (用于email)
 
 --[[
 ========== 各渠道配置示例 ==========
@@ -43,6 +50,32 @@
         title = "通知标题",
         desp = "通知内容: {msg}"  -- {msg} 会被替换为实际消息内容
     }
+}
+
+邮件转发 - SSL加密(如QQ邮箱、163邮箱等):
+{
+    channel = "email",
+    keyword = "all",
+    smtp_server = "smtp.qq.com",
+    smtp_port = 465,
+    smtp_ssl = true,
+    smtp_username = "user@qq.com",
+    smtp_password = "授权码",       -- QQ邮箱需要使用授权码而非登录密码
+    email_from = "user@qq.com",
+    email_to = "recipient@example.com"
+}
+
+邮件转发 - 明文(如内网邮件服务器):
+{
+    channel = "email",
+    keyword = "验证码",
+    smtp_server = "mail.example.com",
+    smtp_port = 25,
+    smtp_ssl = false,
+    smtp_username = "user@example.com",
+    smtp_password = "password",
+    email_from = "user@example.com",
+    email_to = "recipient@example.com"
 }
 
 ========== 正则模式匹配示例 ==========
