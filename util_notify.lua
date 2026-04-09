@@ -27,8 +27,8 @@ local function send(msg, channel)
     end
 
     -- 判断通知渠道 channel
-    if channel and util_notify_channel[channel] == nil then
-        log.error("util_notify.send", "发送通知失败", "未知通知渠道", channel)
+    if not channel or util_notify_channel[channel] == nil then
+        log.error("util_notify.send", "发送通知失败", "无效通知渠道", tostring(channel))
         return true
     end
 
@@ -142,7 +142,7 @@ local function poll()
 
     -- 优化飞行模式操作策略，减少频率
     local flymode_threshold = config.FLYMODE_THRESHOLD or 4  -- 从配置读取阈值
-    if error_count >= flymode_threshold and error_count % flymode_threshold == 0 then
+    if config.FLYMODE_ENABLE and error_count >= flymode_threshold and error_count % flymode_threshold == 0 then
         -- 开关飞行模式，增加恢复时间
         log.warn("util_notify.poll", "连续失败次数过多, 开关飞行模式", error_count)
         log.info("util_notify.poll", "开启飞行模式")

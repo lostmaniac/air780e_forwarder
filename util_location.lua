@@ -9,7 +9,7 @@ local lbsLoc = require("lbsLoc")
 local CELLINFO_TASK_NAME = "util_location_cellinfo"
 local REFRESH_TASK_NAME = "util_location_refresh"
 
-local cache = { lbs_data = { lat = 0, lng = 0 } }
+local cache = { lbs_data = { 0, 0 } }
 
 --- 格式化经纬度 (保留小数点后 6 位, 去除末尾的 0)
 -- @param value 经纬度

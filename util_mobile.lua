@@ -132,7 +132,10 @@ local oper_data = {
 -- @return MNC or -1
 function util_mobile.getMccMnc()
     local imsi = mobile.imsi(mobile.simid()) or ""
-    return string.sub(imsi, 1, 3) or -1, string.sub(imsi, 4, 5) or -1
+    if #imsi < 5 then
+        return -1, -1
+    end
+    return string.sub(imsi, 1, 3), string.sub(imsi, 4, 5)
 end
 --- 获取 Band
 -- @return Band or -1

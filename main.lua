@@ -116,13 +116,8 @@ if config.ROLE == "SLAVE" then
         end
 
         log.info("uart read:", id, len, data)
-        if config.ROLE == "MASTER" then
-            -- 主机, 通过队列发送数据
-            util_notify.add(data)
-        else
-            -- 从机, 通过串口发送数据
-            uart.write(1, data)
-        end
+        -- 从机, 通过串口发送数据
+        uart.write(1, data)
     end)
 end
 
@@ -260,15 +255,16 @@ sys.taskInit(function()
         log.info("main", "设备自动重启已禁用")
     end
 
-    -- 电源键处理（合并短按和双击功能）
-    local last_short_press = 0
+    -- 电源键处理（短按/双击功能，带延迟区分）
+    local single_click_timer = nil
     log.info("main", "注册电源键短按事件订阅")
     sys.subscribe("POWERKEY_SHORT_PRESS", function()
         log.info("main", "收到电源键短按事件")
-        local current_time = mcu.ticks()
 
-        -- 检测双击
-        if current_time - last_short_press < 500 then  -- 500ms内双击
+        if single_click_timer then
+            -- 双击：取消单击定时器，执行双击动作
+            sys.timerStop(single_click_timer)
+            single_click_timer = nil
             log.info("main", "检测到双击，发送开机通知测试")
             local boot_test_msg = "#BOOT_TEST_" .. pm.lastReson()
             local forward_success = util_forward.forwardMessage(boot_test_msg, "BOOT_TEST")
@@ -279,26 +275,27 @@ sys.taskInit(function()
                 util_notify.add(boot_test_msg)
             end
         else
-            -- 短按发送测试通知
-            log.info("main", "短按电源键，发送测试通知")
-            local test_msg = "#ALIVE"
-            local forward_success = util_forward.forwardMessage(test_msg, "TEST")
-            if forward_success then
-                log.info("main", "测试通知通过转发规则发送成功")
-            else
-                log.info("main", "转发规则发送失败，使用默认通知方式")
-                util_notify.add(test_msg)
-            end
+            -- 首次按下：延迟500ms执行单击，等待可能的第二次按下
+            single_click_timer = sys.timerStart(function()
+                single_click_timer = nil
+                log.info("main", "短按电源键，发送测试通知")
+                local test_msg = "#ALIVE"
+                local forward_success = util_forward.forwardMessage(test_msg, "TEST")
+                if forward_success then
+                    log.info("main", "测试通知通过转发规则发送成功")
+                else
+                    log.info("main", "转发规则发送失败，使用默认通知方式")
+                    util_notify.add(test_msg)
+                end
+            end, 500)
         end
-
-        last_short_press = current_time
     end)
 
     -- 电源键长按查询流量
     log.info("main", "注册电源键长按事件订阅")
     sys.subscribe("POWERKEY_LONG_PRESS", function(duration)
         log.info("main", "收到电源键长按事件，持续时间:", duration, "ms")
-        util_mobile.queryTraffic(duration)
+        util_mobile.queryTraffic()
     end)
 end)
 

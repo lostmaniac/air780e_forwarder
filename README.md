@@ -1,11 +1,11 @@
 # Air780E SMS转发器
 
-基于LuatOS的智能短信转发系统，支持根据关键词匹配规则将短信转发到多个渠道（企业微信、飞书、钉钉、自定义webhook）。
+基于LuatOS的智能短信转发系统，支持关键词匹配和正则表达式匹配，将短信转发到多个渠道（企业微信、飞书、钉钉、自定义webhook）。
 
 ## 功能特性
 
 - 📱 **多渠道转发**：支持企业微信、飞书、钉钉、自定义POST等4种转发渠道
-- 🎯 **智能匹配**：支持关键词匹配，可配置多条转发规则
+- 🎯 **智能匹配**：支持关键词匹配（不区分大小写）和 Lua 正则模式匹配
 - 🔄 **异步处理**：采用协程机制，支持并发转发多个渠道
 - 📊 **设备信息**：自动附加信号强度、运营商、位置等设备信息
 - 🛡️ **容错机制**：网络异常自动恢复，转发失败备用通知
@@ -58,18 +58,32 @@ return {
 
 ```lua
 return {
-    -- 匹配所有消息，转发到企业微信
+    -- 关键词匹配：匹配所有消息，转发到企业微信
     {
         channel = "wecom",
         keyword = "all",
         webhook = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=your-key"
     },
 
-    -- 匹配包含"验证码"的消息，转发到飞书
+    -- 关键词匹配：匹配包含"验证码"的消息，转发到飞书
     {
         channel = "feishu",
         keyword = "验证码",
         webhook = "https://open.feishu.cn/open-apis/bot/v2/hook/your-id"
+    },
+
+    -- 正则匹配：匹配4-6位连续数字（如验证码）
+    {
+        channel = "feishu",
+        regular = "%d%d%d%d%d?%d?",
+        webhook = "https://open.feishu.cn/open-apis/bot/v2/hook/your-id"
+    },
+
+    -- 正则匹配：匹配以"验证码"开头的消息
+    {
+        channel = "dingding",
+        regular = "^验证码",
+        webhook = "https://oapi.dingtalk.com/robot/send?access_token=your-token"
     },
 
     -- 更多规则...
@@ -133,11 +147,56 @@ return {
 }
 ```
 
-### 关键词匹配规则
+### 匹配规则
+
+转发规则支持两种匹配模式，通过 `keyword` 和 `regular` 字段区分（二选一）：
+
+#### 关键词匹配 (`keyword`)
 
 - `"all"`：匹配所有消息
-- 部分匹配：不区分大小写，包含关键词即匹配
+- 部分匹配：不区分大小写，消息中包含关键词即匹配
 - 多规则：一条消息可匹配多条规则，同时转发到多个渠道
+
+```lua
+{
+    channel = "wecom",
+    keyword = "验证码",    -- 消息中包含"验证码"即匹配（不区分大小写）
+    webhook = "https://..."
+}
+```
+
+#### 正则模式匹配 (`regular`)
+
+使用 Lua pattern 语法，区分大小写，适合精确匹配场景：
+
+```lua
+-- 匹配以"验证码"开头的消息
+{
+    channel = "feishu",
+    regular = "^验证码",
+    webhook = "https://..."
+}
+
+-- 匹配4-6位连续数字
+{
+    channel = "dingding",
+    regular = "%d%d%d%d%d?%d?",
+    webhook = "https://..."
+}
+```
+
+**注意**：Lua pattern 不支持 `|` 或语法，匹配多个不同关键词请分别建规则。
+
+#### Lua pattern 常用语法
+
+| 语法 | 说明 | 语法 | 说明 |
+|------|------|------|------|
+| `%d` | 数字 | `%a` | 字母 |
+| `%w` | 字母+数字 | `%s` | 空白字符 |
+| `.` | 任意字符 | `%l` | 小写字母 |
+| `*` | 0次或多次 | `+` | 1次或多次 |
+| `?` | 0次或1次 | `^` / `$` | 开头 / 结尾 |
+| `[set]` | 字符集 | `%` | 转义特殊字符 |
 
 ## 使用示例
 
@@ -246,6 +305,10 @@ sms.setNewSmsCb(function(sender_number, sms_content, m)
     util_forward.forwardSms(sms_content, sender_number, time)
 end)
 ```
+
+## 更新日志
+
+详见 [CHANGELOG.md](CHANGELOG.md)
 
 ## 许可证
 

@@ -13,24 +13,51 @@ local function initForwardRules()
 
     -- 打印所有规则用于调试
     for i, rule in ipairs(forward_rules) do
-        log.info("util_forward", "规则" .. i, "渠道", rule.channel, "关键词", rule.keyword, "webhook", rule.webhook and "已配置" or "未配置")
+        local match_desc
+        if rule.regular then
+            match_desc = "正则:" .. rule.regular
+        elseif rule.keyword then
+            match_desc = "关键词:" .. rule.keyword
+        else
+            match_desc = "无匹配条件(匹配所有)"
+        end
+        log.info("util_forward", "规则" .. i, "渠道", rule.channel, match_desc, "webhook", rule.webhook and "已配置" or "未配置")
     end
 
     return true
 end
 
--- 关键词匹配函数
-local function matchKeyword(content, keyword)
-    if keyword == "all" then
-        return true
-    end
-
-    if not content or not keyword then
+-- 匹配函数
+-- keyword: 关键词部分匹配，不区分大小写
+-- regular: Lua正则模式匹配，区分大小写
+local function matchRule(content, rule)
+    if not content then
         return false
     end
 
-    -- 支持部分匹配，不区分大小写
-    return string.find(string.lower(content), string.lower(keyword)) ~= nil
+    local pattern = rule.regular or rule.keyword
+
+    if not pattern then
+        log.warn("util_forward", "规则未配置keyword或regular，将匹配所有消息")
+        return true
+    end
+
+    if pattern == "all" then
+        return true
+    end
+
+    if rule.regular then
+        -- 正则模式匹配
+        local ok, result = pcall(string.find, content, pattern)
+        if not ok then
+            log.error("util_forward", "正则模式语法错误", pattern, result)
+            return false
+        end
+        return result ~= nil
+    else
+        -- 关键词部分匹配，不区分大小写
+        return string.find(string.lower(content), string.lower(pattern)) ~= nil
+    end
 end
 
 -- 企业微信转发函数
@@ -187,9 +214,17 @@ function util_forward.forwardMessage(msg, msg_type)
 
     -- 循环匹配所有规则
     for i, rule in ipairs(forward_rules) do
-        if matchKeyword(msg, rule.keyword) then
+        if matchRule(msg, rule) then
             table.insert(matched_rules, rule)
-            log.info("util_forward", "匹配到规则", "索引", i, "渠道", rule.channel, "关键词", rule.keyword)
+            local match_desc
+            if rule.regular then
+                match_desc = "正则:" .. rule.regular
+            elseif rule.keyword then
+                match_desc = "关键词:" .. rule.keyword
+            else
+                match_desc = "匹配所有"
+            end
+            log.info("util_forward", "匹配到规则", "索引", i, "渠道", rule.channel, match_desc)
         end
     end
 
@@ -252,9 +287,17 @@ function util_forward.forwardSms(msg, sender_number, time)
 
     -- 循环匹配所有规则
     for i, rule in ipairs(forward_rules) do
-        if matchKeyword(msg, rule.keyword) then
+        if matchRule(msg, rule) then
             table.insert(matched_rules, rule)
-            log.info("util_forward", "匹配到规则", "索引", i, "渠道", rule.channel, "关键词", rule.keyword)
+            local match_desc
+            if rule.regular then
+                match_desc = "正则:" .. rule.regular
+            elseif rule.keyword then
+                match_desc = "关键词:" .. rule.keyword
+            else
+                match_desc = "匹配所有"
+            end
+            log.info("util_forward", "匹配到规则", "索引", i, "渠道", rule.channel, match_desc)
         end
     end
 
